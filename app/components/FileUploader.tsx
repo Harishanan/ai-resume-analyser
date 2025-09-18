@@ -1,69 +1,101 @@
-import {useState, useCallback} from 'react'
-import {useDropzone} from 'react-dropzone'
-import { formatSize } from '~/lib/utils'
+import { useState, useCallback } from "react"
+import { useDropzone } from "react-dropzone"
+import { formatSize } from "~/lib/utils"
 
 interface FileUploaderProps {
     onFileSelect?: (file: File | null) => void;
 }
 
 const FileUploader = ({ onFileSelect }: FileUploaderProps) => {
-    const onDrop = useCallback((acceptedFiles: File[]) => {
-        const file = acceptedFiles[0] || null;
-        onFileSelect?.(file);
-    }, [onFileSelect]);
+    const [selectedFile, setSelectedFile] = useState<File | null>(null)
 
-    const maxFileSize = 20 * 1024 * 1024; // 20MB in bytes
+    const onDrop = useCallback(
+        (acceptedFiles: File[]) => {
+            const file = acceptedFiles[0] || null
+            setSelectedFile(file)
+            onFileSelect?.(file)
+        },
+        [onFileSelect]
+    )
 
-    const {getRootProps, getInputProps, isDragActive, acceptedFiles} = useDropzone({
+    const maxFileSize = 20 * 1024 * 1024 // 20MB
+
+    const { getRootProps, getInputProps } = useDropzone({
         onDrop,
         multiple: false,
-        accept: { 'application/pdf': ['.pdf']},
+        accept: { "application/pdf": [".pdf"] },
         maxSize: maxFileSize,
     })
 
-    const file = acceptedFiles[0] || null;
-
     return (
-        <div className="w-full gradient-border">
+        <div className="w-full gradient-border p-4 rounded-lg">
             <div {...getRootProps()}>
                 <input {...getInputProps()} />
 
                 <div className="space-y-4 cursor-pointer">
-                    {file ? (
-                        <div className="uploader-selected-file" onClick={(e) => e.stopPropagation()}>
-                            <img src="/images/pdf.png" alt="pdf" className="size-10" />
+                    {selectedFile ? (
+                        <div
+                            className="uploader-selected-file flex items-center justify-between p-3 border rounded bg-gray-50"
+                            onClick={(e) => e.stopPropagation()}
+                        >
                             <div className="flex items-center space-x-3">
+                                <img src="/images/pdf.png" alt="pdf" className="size-10" />
                                 <div>
                                     <p className="text-sm font-medium text-gray-700 truncate max-w-xs">
-                                        {file.name}
+                                        {selectedFile.name}
                                     </p>
                                     <p className="text-sm text-gray-500">
-                                        {formatSize(file.size)}
+                                        {formatSize(selectedFile.size)}
                                     </p>
                                 </div>
                             </div>
-                            <button className="p-2 cursor-pointer" onClick={(e) => {
-                                onFileSelect?.(null)
-                            }}>
-                                <img src="/icons/cross.svg" alt="remove" className="w-4 h-4" />
+                            <button
+                                className="p-2 cursor-pointer"
+                                onClick={(e) => {
+                                    e.stopPropagation()
+                                    setSelectedFile(null)
+                                    onFileSelect?.(null)
+                                    console.log("File removed")
+                                }}
+                            >
+                                <img
+                                    src="/icons/cross.svg"
+                                    alt="remove"
+                                    className="w-4 h-4"
+                                />
                             </button>
                         </div>
-                    ): (
-                        <div>
+                    ) : (
+                        <div className="text-center">
                             <div className="mx-auto w-16 h-16 flex items-center justify-center mb-2">
                                 <img src="/icons/info.svg" alt="upload" className="size-20" />
                             </div>
                             <p className="text-lg text-gray-500">
-                                <span className="font-semibold">
-                                    Click to upload
-                                </span> or drag and drop
+                                <span className="font-semibold">Click to upload</span> or drag
+                                and drop
                             </p>
-                            <p className="text-lg text-gray-500">PDF (max {formatSize(maxFileSize)})</p>
+                            <p className="text-lg text-gray-500">
+                                PDF (max {formatSize(maxFileSize)})
+                            </p>
                         </div>
                     )}
                 </div>
             </div>
+
+            {/* Analyse button */}
+            <button
+                className="mt-4 px-4 py-2 bg-blue-500 text-white rounded disabled:opacity-50"
+                disabled={!selectedFile}
+                onClick={() => {
+                    if (selectedFile) {
+                        console.log("Analyzing", selectedFile)
+                    }
+                }}
+            >
+                Analyse
+            </button>
         </div>
     )
 }
+
 export default FileUploader
